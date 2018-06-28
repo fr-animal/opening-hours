@@ -1,0 +1,29 @@
+{
+  "name": "opening-hours",
+  "version": "1.0.0",
+  "description": "An opening hours scheduler with a nice API",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-preset-env": "^1.7.0",
+    "jest": "^23.2.0",
+    "moment": "^2.22.2",
+    "ramda": "^0.25.0"
+  },
+  "devDependencies": {
+    "mockdate": "^2.0.2"
+  },
+  "standard": {
+    "globals": [
+      "describe",
+      "expect",
+      "it",
+      "jest"
+    ]
+  }
+}
