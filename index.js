@@ -1,5 +1,19 @@
 import moment from 'moment'
-import { allPass, gt, ifElse, lt, or, split } from 'ramda'
+import { allPass, compose, gt, ifElse, lt, or, split, tap } from 'ramda'
+
+const secondsOr = ifElse(
+  or,
+  () => 1000
+)
+
+const minutesOr = ifElse(
+  or,
+  () => 1000 * 60
+)
+
+const hours = () => 1000 * 60 * 60
+
+const getInterval = (oS, cS, oM, cM) => secondsOr(() => minutesOr(hours)(oM, oM))(oS, cS)
 
 export default (openingHours, open, close) => {
   let isOpen = false
@@ -26,19 +40,8 @@ export default (openingHours, open, close) => {
     open()
     isOpen = true
   }
-  const secondsOr = ifElse(
-    () => or(oSeconds, cSeconds),
-    () => 1000
-  )
 
-  const minutesOr = ifElse(
-    () => or(oMinutes, cMinutes),
-    () => 1000 * 60
-  )
-
-  const hours = () => 1000 * 60 * 60
-
-  const intervalToCheck = secondsOr(minutesOr(hours))()
+  const intervalToCheck = getInterval(oSeconds, cSeconds, oMinutes, cMinutes)
 
   setInterval(() => {
     const now = moment()
