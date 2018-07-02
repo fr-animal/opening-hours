@@ -1,19 +1,35 @@
 import moment from 'moment'
-import { allPass, compose, gt, ifElse, lt, or, split, tap } from 'ramda'
+import { allPass, compose, gt, ifElse, lte, or, split, tap } from 'ramda'
+
+const SECOND = 'second'
+const MINUTE = 'minute'
+const HOUR = 'hour'
+
+const interval = i => ({ [SECOND]: 1000, [MINUTE]: 1000 * 60, [HOUR]: 1000 * 60 * 60 })[i]
 
 const secondsOr = ifElse(
   or,
-  () => 1000
+  () => SECOND
 )
 
 const minutesOr = ifElse(
   or,
-  () => 1000 * 60
+  () => MINUTE
 )
 
-const hours = () => 1000 * 60 * 60
+const hours = () => HOUR
 
-const getInterval = (oS, cS, oM, cM) => secondsOr(() => minutesOr(hours)(oM, oM))(oS, cS)
+const getSmallest = (oS, cS, oM, cM) => secondsOr(() => minutesOr(hours)(oM, cM))(oS, cS)
+
+const tillNext = (unit, time) => moment(time).endOf(unit) - moment(time) + 1
+
+const checkAndOpen = (open, shouldOpen) => (isOpen, now) => {
+  if (!isOpen && shouldOpen(now)) {
+    open()
+    return true
+  }
+  return false
+}
 
 export default (openingHours, open, close) => {
   let isOpen = false
@@ -28,26 +44,27 @@ export default (openingHours, open, close) => {
     .hours(oHours)
     .minutes(oMinutes || 0)
     .seconds(oSeconds || 0)
+    .milliseconds(0)
 
   const closeAt = moment()
     .hours(cHours)
     .minutes(cMinutes || 0)
     .seconds(cSeconds || 0)
+    .milliseconds(0)
 
-  const shouldOpen = allPass([ lt(openAt), gt(closeAt) ])
+  const shouldOpen = allPass([ lte(openAt), gt(closeAt) ])
+  const maybeOpen = checkAndOpen(open, shouldOpen)
 
-  if (shouldOpen(initial)) {
-    open()
-    isOpen = true
-  }
+  isOpen = maybeOpen(isOpen, initial)
 
-  const intervalToCheck = getInterval(oSeconds, cSeconds, oMinutes, cMinutes)
+  const smallest = getSmallest(oSeconds, cSeconds, oMinutes, cMinutes)
 
-  setInterval(() => {
-    const now = moment()
-    if (!isOpen && shouldOpen(now)) {
-      open()
-      isOpen = true
-    }
-  }, intervalToCheck)
+  const intervalToCheck = interval(smallest)
+
+  const timeToNextInterval = tillNext(smallest, initial)
+
+  setTimeout(() => {
+    isOpen = maybeOpen(isOpen, moment()) || isOpen
+    setInterval(() => maybeOpen(isOpen, moment()), intervalToCheck)
+  }, timeToNextInterval)
 }
