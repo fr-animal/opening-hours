@@ -1,7 +1,7 @@
 {
-  "name": "opening-hours",
+  "name": "simple-opening-times",
   "version": "1.0.0",
-  "description": "An opening hours scheduler with a nice API",
+  "description": "An opening times scheduler with a nice API",
   "main": "index.js",
   "scripts": {
     "test": "jest"
