@@ -1,11 +1,15 @@
 import moment from 'moment'
-import { allPass, compose, gt, ifElse, lte, or, split, tap } from 'ramda'
+import { allPass, gt, ifElse, lt, lte, or, split } from 'ramda'
 
 const SECOND = 'second'
 const MINUTE = 'minute'
 const HOUR = 'hour'
 
-const interval = i => ({ [SECOND]: 1000, [MINUTE]: 1000 * 60, [HOUR]: 1000 * 60 * 60 })[i]
+const interval = i => ({
+  [SECOND]: 1000,
+  [MINUTE]: 1000 * 60,
+  [HOUR]: 1000 * 60 * 60
+})[i]
 
 const secondsOr = ifElse(
   or,
@@ -23,9 +27,9 @@ const getSmallest = (oS, cS, oM, cM) => secondsOr(() => minutesOr(hours)(oM, cM)
 
 const tillNext = (unit, time) => moment(time).endOf(unit) - moment(time) + 1
 
-const checkAndOpen = (open, shouldOpen) => (isOpen, now) => {
-  if (!isOpen && shouldOpen(now)) {
-    open()
+const checkAndRun = (op, datePred) => (already, now) => {
+  if (!already && datePred(now)) {
+    op && op()
     return true
   }
   return false
@@ -53,18 +57,25 @@ export default (openingHours, open, close) => {
     .milliseconds(0)
 
   const shouldOpen = allPass([ lte(openAt), gt(closeAt) ])
-  const maybeOpen = checkAndOpen(open, shouldOpen)
+  const maybeOpen = checkAndRun(open, shouldOpen)
+
+  const shouldClose = allPass([ lt(openAt), lte(closeAt) ])
+  const maybeClose = checkAndRun(close, shouldClose)
 
   isOpen = maybeOpen(isOpen, initial)
 
   const smallest = getSmallest(oSeconds, cSeconds, oMinutes, cMinutes)
-
   const intervalToCheck = interval(smallest)
-
   const timeToNextInterval = tillNext(smallest, initial)
 
+  const check = (iOpen, time) => {
+    return maybeOpen(iOpen, time) || (maybeClose(!iOpen, time) ? false : iOpen)
+  }
+
   setTimeout(() => {
-    isOpen = maybeOpen(isOpen, moment()) || isOpen
-    setInterval(() => maybeOpen(isOpen, moment()), intervalToCheck)
+    isOpen = check(isOpen, moment())
+    setInterval(() => {
+      isOpen = check(isOpen, moment())
+    }, intervalToCheck)
   }, timeToNextInterval)
 }

@@ -63,4 +63,53 @@ describe('Opening times', () => {
       }
     )
   })
+
+  describe('Closing  times', () => {
+    describe('Daily closing times', () => {
+      it.each([
+        [['16:19', '16:21'], 1000 * 60, '16:20', true],
+        [['16:19', '16:21'], 1000 * 60, '16:19', false],
+        [['16:19', '16:21'], (1000 * 60) - 1, '16:20', false]
+      ])(
+        'Calls close() when times are %j at %sms after %s should be %s',
+        (times, advanceBy, currentTime, shouldCallClose) => {
+          jest.useFakeTimers()
+          const current = stringToMoment(currentTime)
+          MockDate.set(current)
+
+          const open = () => {}
+          const close = jest.fn()
+          openingTimes(times, open, close)
+
+          const setDate = moment(current).add(advanceBy, 'ms')
+          MockDate.set(setDate)
+
+          jest.advanceTimersByTime(advanceBy)
+          expect(close).toHaveBeenCalledTimes(shouldCallClose ? 1 : 0)
+        }
+      )
+
+      it.each([
+        [['16:19', '16:21'], 1000 * 60, '16:21'],
+        [['16:19', '16:21'], 1000 * 60 * 60, '16:21']
+      ])(
+        'Doesn\'t call close() if already closed when times are %j at %sms after %s should be %s',
+        (times, advanceBy, currentTime) => {
+          jest.useFakeTimers()
+          const current = stringToMoment(currentTime)
+          MockDate.set(current)
+
+          const open = () => {}
+          const close = jest.fn()
+          openingTimes(times, open, close)
+
+          const setDate = moment(current).add(advanceBy, 'ms')
+          MockDate.set(setDate)
+
+          jest.advanceTimersByTime(advanceBy)
+          expect(close).toHaveBeenCalledTimes(0)
+        }
+      )
+    })
+  })
 })

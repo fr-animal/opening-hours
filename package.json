@@ -6,7 +6,10 @@
   "scripts": {
     "test": "jest"
   },
-  "author": "",
+  "author": {
+    "name" : "Joseph Gordon",
+    "email" : "me@josephgordon.co.uk"
+  },
   "license": "ISC",
   "dependencies": {
     "babel-cli": "^6.26.0",
